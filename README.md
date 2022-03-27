@@ -1,8 +1,8 @@
 - 👋 Hi, I’m @Achilnos47
 - 👀 I’m interested in Crypto and blockcahin
-- 🌱 I’m currently learning haskell/plutus
-- 💞️ I’m looking to collaborate on ...
-- 📫 How to reach me by email satorinvesting@gmail.com
+- 🌱 I’m currently learning Front end development
+- 💞️ I’m looking to become a blockchain developer
+- 📫 How to reach me by email achilnosdesigns@gmail.com
 
 <!---
 Achilnos47/Achilnos47 is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
