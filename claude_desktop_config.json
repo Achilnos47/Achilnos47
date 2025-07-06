@@ -1,0 +1,48 @@
+{
+  "mcpServers": {
+    "wsb-analyst": {
+      "command": "uvx",
+      "args": ["run", "wsb-analyst"],
+      "env": {
+        "REDDIT_CLIENT_ID": "your_reddit_client_id",
+        "REDDIT_CLIENT_SECRET": "your_reddit_secret"
+      }
+    },
+    "reddit-general": {
+      "command": "uvx",
+      "args": ["run", "reddit-mcp"],
+      "env": {
+        "REDDIT_CLIENT_ID": "your_reddit_client_id",
+        "REDDIT_CLIENT_SECRET": "your_reddit_secret",
+        "REDDIT_USER_AGENT": "MarketIntel/1.0"
+      }
+    },
+    "google-news": {
+      "command": "uvx",
+      "args": ["run", "google-news-mcp"]
+    },
+    "tavily-search": {
+      "command": "uvx",
+      "args": ["run", "tavily-search"],
+      "env": {
+        "TAVILY_API_KEY": "your_tavily_api_key"
+      }
+    },
+    "app-insight": {
+      "command": "uvx",
+      "args": ["run", "app-insight-mcp"],
+      "env": {
+        "APP_STORE_CONNECT_KEY": "your_app_store_key",
+        "GOOGLE_PLAY_API_KEY": "your_google_play_key"
+      }
+    },
+    "web-search": {
+      "command": "uvx",
+      "args": ["run", "web-search-mcp"]
+    },
+    "sentiment-analysis": {
+      "command": "uvx",
+      "args": ["run", "sentiment-analysis-mcp"]
+    }
+  }
+}
