@@ -1,0 +1,483 @@
+{
+  "name": "Social Intelligence Research Hub",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [260, 380]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "topic",
+              "value": "AI regulation developments"
+            },
+            {
+              "name": "timeframe",
+              "value": "last 7 days"
+            },
+            {
+              "name": "geography",
+              "value": "Global"
+            }
+          ],
+          "number": [
+            {
+              "name": "maxResults",
+              "value": 10
+            }
+          ]
+        }
+      },
+      "id": "2",
+      "name": "Set Research Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [460, 380]
+    },
+    {
+      "parameters": {
+        "authentication": "none",
+        "url": "https://www.googleapis.com/youtube/v3/search",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "part",
+                "value": "snippet"
+              },
+              {
+                "name": "order",
+                "value": "date"
+              },
+              {
+                "name": "maxResults",
+                "value": "={{$json.maxResults}}"
+              },
+              {
+                "name": "q",
+                "value": "={{$json.topic}} {{$json.timeframe}} insights"
+              }
+            ]
+          }
+        }
+      },
+      "id": "3",
+      "name": "YouTube Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [720, 180]
+    },
+    {
+      "parameters": {
+        "functionCode": "const response = items[0]?.json ?? {};\nconst videos = (response.items || []).slice(0, 5).map((video) => ({\n  title: video.snippet?.title || video.title || 'Untitled video',\n  url: video.id?.videoId ? `https://www.youtube.com/watch?v=${video.id.videoId}` : (video.url || ''),\n  publishedAt: video.snippet?.publishedAt || video.publishedAt || null,\n  summary: video.snippet?.description || video.description || ''\n}));\nreturn [{\n  json: {\n    youtube: {\n      extractedAt: new Date().toISOString(),\n      highlights: videos\n    }\n  }\n}];"
+      },
+      "id": "4",
+      "name": "Format YouTube Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [960, 180]
+    },
+    {
+      "parameters": {
+        "authentication": "none",
+        "url": "https://www.reddit.com/search.json",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "q",
+                "value": "={{$json.topic}}"
+              },
+              {
+                "name": "sort",
+                "value": "new"
+              },
+              {
+                "name": "limit",
+                "value": "={{$json.maxResults}}"
+              }
+            ]
+          },
+          "response": {
+            "fullResponse": false
+          }
+        }
+      },
+      "id": "5",
+      "name": "Reddit Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [720, 340]
+    },
+    {
+      "parameters": {
+        "functionCode": "const response = items[0]?.json ?? {};\nconst posts = (response.data?.children || []).slice(0, 5).map((child) => {\n  const data = child.data || {};\n  return {\n    title: data.title || 'Untitled post',\n    url: data.url || '',\n    subreddit: data.subreddit || '',\n    score: data.score || 0,\n    comments: data.num_comments || 0,\n    createdUtc: data.created_utc || null,\n    summary: data.selftext?.slice(0, 500) || ''\n  };\n});\nreturn [{\n  json: {\n    reddit: {\n      extractedAt: new Date().toISOString(),\n      highlights: posts\n    }\n  }\n}];"
+      },
+      "id": "6",
+      "name": "Format Reddit Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [960, 340]
+    },
+    {
+      "parameters": {
+        "authentication": "none",
+        "url": "https://serpapi.com/search.json",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "engine",
+                "value": "google_news"
+              },
+              {
+                "name": "q",
+                "value": "={{$json.topic}}"
+              },
+              {
+                "name": "gl",
+                "value": "={{$json.geography}}"
+              },
+              {
+                "name": "api_key",
+                "value": "={{$json.serpApiKey || 'YOUR_SERPAPI_KEY'}}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "9",
+      "name": "Web Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [720, 660]
+    },
+    {
+      "parameters": {
+        "functionCode": "const response = items[0]?.json ?? {};\nconst articles = (response.articles || response.news_results || []).slice(0, 5).map((article) => ({\n  title: article.title || 'Untitled article',\n  url: article.link || article.url || '',\n  source: article.source || article.publisher || '',\n  publishedAt: article.published || article.date || null,\n  summary: article.snippet || article.excerpt || ''\n}));\nreturn [{\n  json: {\n    web: {\n      extractedAt: new Date().toISOString(),\n      highlights: articles\n    }\n  }\n}];"
+      },
+      "id": "10",
+      "name": "Format Web Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [960, 660]
+    },
+    {
+      "parameters": {
+        "authentication": "none",
+        "url": "https://api.twitter.com/2/tweets/search/recent",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "query",
+                "value": "={{$json.topic}} lang:en -is:retweet"
+              },
+              {
+                "name": "max_results",
+                "value": "={{$json.maxResults}}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "7",
+      "name": "Twitter Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [720, 500]
+    },
+    {
+      "parameters": {
+        "functionCode": "const response = items[0]?.json ?? {};\nconst tweets = (response.data || []).slice(0, 5).map((tweet) => ({\n  id: tweet.id,\n  text: tweet.text,\n  authorId: tweet.author_id,\n  createdAt: tweet.created_at || null,\n  metrics: tweet.public_metrics || {}\n}));\nreturn [{\n  json: {\n    twitter: {\n      extractedAt: new Date().toISOString(),\n      highlights: tweets\n    }\n  }\n}];"
+      },
+      "id": "8",
+      "name": "Format Twitter Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [960, 500]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineOperation": "mergeByIndex"
+      },
+      "id": "11",
+      "name": "Merge YT + Reddit",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [1180, 260]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineOperation": "mergeByIndex"
+      },
+      "id": "12",
+      "name": "Add Twitter Stream",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [1380, 380]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineOperation": "mergeByIndex"
+      },
+      "id": "13",
+      "name": "Add Web Research",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [1580, 500]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineOperation": "mergeByIndex"
+      },
+      "id": "14",
+      "name": "Merge Research Parameters",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [1780, 500]
+    },
+    {
+      "parameters": {
+        "functionCode": "const item = items[0]?.json || {};\nconst topic = item.topic || 'Unknown Topic';\nconst timeframe = item.timeframe || 'Unspecified timeframe';\nconst sources = ['youtube', 'reddit', 'twitter', 'web'];\nconst insights = sources\n  .filter((key) => item[key]?.highlights?.length)\n  .map((key) => ({\n    source: key,\n    highlights: item[key].highlights\n  }));\nconst bulletSections = insights.map((section) => {\n  const header = section.source.toUpperCase();\n  const bullets = section.highlights.map((entry) => `- ${entry.title || entry.text || 'Untitled'}${entry.url ? ` ( ${entry.url} )` : ''}`);\n  return `### ${header}\n${bullets.join('\n')}`;\n});\nreturn [{\n  json: {\n    topic,\n    timeframe,\n    compiledInsights: insights,\n    markdown: `## Intelligence Brief on ${topic}\n**Timeframe:** ${timeframe}\n\n${bulletSections.join('\n\n')}`\n  }\n}];"
+      },
+      "id": "15",
+      "name": "Synthesize Cross-Channel Insights",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1980, 500]
+    },
+    {
+      "parameters": {
+        "functionCode": "const brief = items[0]?.json || {};\nconst summary = brief.compiledInsights.map((section) => {\n  const sample = section.highlights.slice(0, 3).map((item) => {\n    const descriptor = item.title || item.text || 'Insight';\n    return `• ${descriptor}`;\n  });\n  return `${section.source.toUpperCase()}\n${sample.join('\n')}`;\n}).join('\n\n');\nreturn [{\n  json: {\n    topic: brief.topic,\n    timeframe: brief.timeframe,\n    executiveSummary: `Key developments from ${brief.timeframe} on ${brief.topic}:\n\n${summary}`,\n    markdown: brief.markdown\n  }\n}];"
+      },
+      "id": "16",
+      "name": "Build Executive Summary",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2180, 500]
+    },
+    {
+      "parameters": {
+        "functionCode": "const report = items[0]?.json || {};\nconst emailSubject = `Intelligence Brief: ${report.topic}`;\nconst emailBody = `${report.executiveSummary}\n\n${report.markdown}`;\nreturn [{\n  json: {\n    topic: report.topic,\n    timeframe: report.timeframe,\n    executiveSummary: report.executiveSummary,\n    reportMarkdown: report.markdown,\n    email: {\n      subject: emailSubject,\n      body: emailBody\n    }\n  }\n}];"
+      },
+      "id": "17",
+      "name": "Assemble Report Package",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2380, 500]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Set Research Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Research Parameters": {
+      "main": [
+        [
+          {
+            "node": "YouTube Search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Reddit Search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Twitter Search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Web Search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Research Parameters",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "YouTube Search": {
+      "main": [
+        [
+          {
+            "node": "Format YouTube Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format YouTube Results": {
+      "main": [
+        [
+          {
+            "node": "Merge YT + Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reddit Search": {
+      "main": [
+        [
+          {
+            "node": "Format Reddit Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Reddit Results": {
+      "main": [
+        [
+          {
+            "node": "Merge YT + Reddit",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge YT + Reddit": {
+      "main": [
+        [
+          {
+            "node": "Add Twitter Stream",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twitter Search": {
+      "main": [
+        [
+          {
+            "node": "Format Twitter Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Twitter Results": {
+      "main": [
+        [
+          {
+            "node": "Add Twitter Stream",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Add Twitter Stream": {
+      "main": [
+        [
+          {
+            "node": "Add Web Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Web Search": {
+      "main": [
+        [
+          {
+            "node": "Format Web Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Web Results": {
+      "main": [
+        [
+          {
+            "node": "Add Web Research",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Add Web Research": {
+      "main": [
+        [
+          {
+            "node": "Merge Research Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Research Parameters": {
+      "main": [
+        [
+          {
+            "node": "Synthesize Cross-Channel Insights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthesize Cross-Channel Insights": {
+      "main": [
+        [
+          {
+            "node": "Build Executive Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Executive Summary": {
+      "main": [
+        [
+          {
+            "node": "Assemble Report Package",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "4d9f1f68-8aaf-4f80-9b9f-2d4dc898aaa1"
+}
